@@ -32,13 +32,14 @@ const entetesSecurite = {
 // /enfants/12 (modifier), /enfants/12/archiver, /enfants/12/reactiver
 const routeFicheEnfant = /^\/enfants\/([1-9]\d{0,8})(?:\/(archiver|reactiver))?$/;
 
-// Message affiché après une écriture réussie, d'après ?fait=…
-const messagesFait: Record<string, (prenom: string) => string> = {
-  ajoute: (prenom) => `Fiche de ${prenom} ajoutée.`,
-  enregistre: (prenom) => `Fiche de ${prenom} enregistrée.`,
-  archive: (prenom) => `Fiche de ${prenom} archivée.`,
-  reactive: (prenom) => `Fiche de ${prenom} réactivée.`,
-};
+// Message affiché après une écriture réussie, d'après ?fait=… (une Map, pour
+// que « ?fait=constructor » ou « __proto__ » ne trouvent rien).
+const messagesFait = new Map<string, (prenom: string) => string>([
+  ['ajoute', (prenom) => `Fiche de ${prenom} ajoutée.`],
+  ['enregistre', (prenom) => `Fiche de ${prenom} enregistrée.`],
+  ['archive', (prenom) => `Fiche de ${prenom} archivée.`],
+  ['reactive', (prenom) => `Fiche de ${prenom} réactivée.`],
+]);
 
 const pagesPrivees = new Map<string, Page>(
   [accueil, ...ecrans].map(({ chemin, titre, fichier }) => [chemin, { titre, fichier, privee: true, cheminActif: chemin }]),
@@ -182,7 +183,7 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
     const etat: Omit<EtatEcran, 'enfants' | 'aujourdhui'> = {};
     const idConcerne = idDe(parametres.get('enfant'));
     const concerne = idConcerne === undefined ? undefined : lireEnfant(base, idConcerne);
-    const message = messagesFait[parametres.get('fait') ?? ''];
+    const message = messagesFait.get(parametres.get('fait') ?? '');
     if (concerne && message) etat.succes = message(concerne.prenom);
 
     if (parametres.has('id')) {

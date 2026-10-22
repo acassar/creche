@@ -76,9 +76,11 @@ const controle = /\p{Cc}/u;
  * message d'erreur à montrer à la direction.
  */
 export function verifierSaisie(champs: URLSearchParams, aujourdhui: string): { saisie: Saisie } | { erreur: string } {
-  const prenom = (champs.get('prenom') ?? '').trim();
+  // NFC d'abord (un « é » tapé sur deux claviers différents est le même), et
+  // les longueurs se vérifient ensuite, sur ce qui sera réellement enregistré.
+  const prenom = (champs.get('prenom') ?? '').normalize('NFC').trim();
   const naissance = (champs.get('naissance') ?? '').trim();
-  const aSavoir = (champs.get('a_savoir') ?? '').trim();
+  const aSavoir = (champs.get('a_savoir') ?? '').normalize('NFC').trim();
   const joursCoches = champs.getAll('jours');
 
   if (prenom === '') return { erreur: 'Indiquez le prénom.' };
@@ -102,7 +104,7 @@ export function verifierSaisie(champs: URLSearchParams, aujourdhui: string): { s
   }
   if (jours === 0) return { erreur: 'Cochez au moins un jour de présence.' };
 
-  return { saisie: { prenom: prenom.normalize('NFC'), naissance, aSavoir: aSavoir.normalize('NFC'), jours } };
+  return { saisie: { prenom, naissance, aSavoir, jours } };
 }
 
 interface Ligne {

@@ -317,3 +317,26 @@ test('écran Enfants : méthodes permises', async (t) => {
     assert.equal(reponse.headers.get('allow'), permis, `${method} ${chemin}`);
   }
 });
+
+test('écran Enfants : un ?fait= inattendu n’affiche rien et ne provoque pas d’erreur', async (t) => {
+  const { poster, voir } = await connecte(t);
+  await poster('/enfants', jade);
+  t.mock.method(console, 'error', () => {});
+  for (const fait of ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'inconnu']) {
+    const reponse = await voir(`/enfants?enfant=1&fait=${fait}`);
+    assert.equal(reponse.status, 200, fait);
+    assert.ok(!(await reponse.text()).includes('class="succes"'), fait);
+  }
+});
+
+test('la longueur du prénom se vérifie après normalisation, comme en base', () => {
+  // « क़ » (U+0958) devient deux caractères une fois normalisé en NFC.
+  const prenom = 'क़'.repeat(26);
+  assert.equal([...prenom].length, 26);
+  assert.equal([...prenom.normalize('NFC')].length, 52);
+  assert.deepEqual(
+    verifierSaisie(champs({ ...jade, prenom }), aujourdhui),
+    { erreur: 'Le prénom fait au plus 50 caractères.' },
+  );
+  assert.ok('erreur' in verifierSaisie(champs({ ...jade, a_savoir: 'क़'.repeat(101) }), aujourdhui));
+});
