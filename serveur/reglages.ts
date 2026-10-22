@@ -20,17 +20,20 @@ export interface EcranFiches {
 
 // Une Map, pour que « ?fait=constructor » ou « __proto__ » ne trouvent rien.
 const participes = new Map([
-  ['ajoute', 'ajoutée'],
-  ['enregistre', 'enregistrée'],
-  ['archive', 'archivée'],
-  ['desactive', 'désactivée'],
-  ['reactive', 'réactivée'],
+  ['ajoute', 'ajouté'],
+  ['enregistre', 'enregistré'],
+  ['archive', 'archivé'],
+  ['desactive', 'désactivé'],
+  ['reactive', 'réactivé'],
 ]);
 
-// Message affiché après une écriture réussie, d'après ?fait=… et le prénom concerné.
-export function messageFait(fait: string | null, prenom: string | undefined): string | undefined {
+/**
+ * Message affiché après une écriture réussie, d'après ?fait=… : « Fiche de
+ * Jade ajoutée. », « Bouton « Plat » ajouté. ». Rien si `sujet` est absent.
+ */
+export function messageFait(fait: string | null, sujet: string | undefined, feminin: boolean): string | undefined {
   const participe = participes.get(fait ?? '');
-  return participe && prenom !== undefined ? `Fiche de ${prenom} ${participe}.` : undefined;
+  return participe && sujet !== undefined ? `${sujet} ${participe}${feminin ? 'e' : ''}.` : undefined;
 }
 
 // Identifiant d'enregistrement lu dans l'adresse : un entier positif, sinon undefined.

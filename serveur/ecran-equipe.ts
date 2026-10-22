@@ -32,7 +32,8 @@ export function ecranEquipe(base: DatabaseSync, maintenant: () => number): Ecran
     afficher(parametres) {
       const etat: Etat = {};
       const idConcerne = idDe(parametres.get('membre'));
-      const succes = messageFait(parametres.get('fait'), idConcerne === undefined ? undefined : lireMembre(base, idConcerne)?.prenom);
+      const concerne = idConcerne === undefined ? undefined : lireMembre(base, idConcerne);
+      const succes = messageFait(parametres.get('fait'), concerne && `Fiche de ${concerne.prenom}`, true);
       if (succes) etat.succes = succes;
 
       if (parametres.has('id')) {

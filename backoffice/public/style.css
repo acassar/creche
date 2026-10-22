@@ -169,3 +169,12 @@ button.secondaire { background: var(--accent-clair); color: var(--accent); }
 .couleur-ambre { background: #8A5A00; }
 .couleur-olive { background: #5B6B12; }
 .couleur-ardoise { background: #4A5560; }
+
+/* Écran Repas : flèches d'ordre et champs d'âge côte à côte. */
+td.ordre { width: 1%; }
+td.ordre form { display: inline-flex; max-width: none; }
+button.fleche { margin: 0 4px 0 0; padding: 4px 10px; background: var(--accent-clair); color: var(--accent); }
+.ages { display: flex; align-items: center; gap: 8px; }
+.ages label { font-weight: 400; }
+.ages input { width: 5em; }
+.case .aide { display: inline; }

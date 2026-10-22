@@ -1,2 +1,33 @@
-<p>Les boutons de l’écran repas, par tranche d’âge.</p>
-<p class="a-venir">Cet écran arrive bientôt.</p>
+<p class="intro">{{resume}}</p>
+{{message}}
+<div class="deux-colonnes">
+  <section class="liste" aria-label="Boutons de l’écran Repas">
+{{liste}}
+{{desactives}}
+  </section>
+  <section class="panneau" aria-labelledby="titre-fiche">
+{{nouveau}}
+    <h2 id="titre-fiche">{{titreFiche}}</h2>
+    <form method="post" action="{{action}}">
+      <label for="libelle">Libellé</label>
+      <input id="libelle" name="libelle" value="{{libelle}}" maxlength="30" required autocomplete="off" placeholder="Ex. Entrée, Plat, Biberon">
+      <fieldset>
+        <legend>Un tap note</legend>
+{{comportements}}
+      </fieldset>
+      <fieldset>
+        <legend>Pour les enfants de</legend>
+        <div class="ages">
+          <label for="age-min">De</label>
+          <input id="age-min" name="age_min" type="number" min="0" max="{{ageMaximum}}" step="1" value="{{ageMin}}" inputmode="numeric">
+          <label for="age-max">à</label>
+          <input id="age-max" name="age_max" type="number" min="0" max="{{ageMaximum}}" step="1" value="{{ageMax}}" inputmode="numeric">
+          <span>mois</span>
+        </div>
+        <p class="aide">Bornes comprises, en mois révolus. Laissez vide pour ne pas limiter.</p>
+      </fieldset>
+      <button type="submit">Enregistrer</button>
+    </form>
+{{desactiver}}
+  </section>
+</div>

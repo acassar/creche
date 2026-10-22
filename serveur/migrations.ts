@@ -23,4 +23,16 @@ export const migrations: readonly string[] = [
      couleur      TEXT    NOT NULL CHECK (length(couleur) BETWEEN 1 AND 20),
      desactive_le TEXT
    ) STRICT;`,
+  // Boutons de l'écran Repas. Âges en mois révolus, bornes comprises (NULL :
+  // pas de limite). ordre : position d'affichage, du plus petit au plus grand.
+  `CREATE TABLE boutons_repas (
+     id           INTEGER PRIMARY KEY,
+     libelle      TEXT    NOT NULL CHECK (length(libelle) BETWEEN 1 AND 30),
+     comportement TEXT    NOT NULL CHECK (comportement IN ('compteur', 'appreciation', 'quantite')),
+     age_min      INTEGER CHECK (age_min BETWEEN 0 AND 84),
+     age_max      INTEGER CHECK (age_max BETWEEN 0 AND 84),
+     ordre        INTEGER NOT NULL,
+     desactive_le TEXT,
+     CHECK (age_min IS NULL OR age_max IS NULL OR age_min <= age_max)
+   ) STRICT;`,
 ];

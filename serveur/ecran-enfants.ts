@@ -21,7 +21,8 @@ export function ecranEnfants(base: DatabaseSync, maintenant: () => number): Ecra
     afficher(parametres) {
       const etat: Etat = {};
       const idConcerne = idDe(parametres.get('enfant'));
-      const succes = messageFait(parametres.get('fait'), idConcerne === undefined ? undefined : lireEnfant(base, idConcerne)?.prenom);
+      const concerne = idConcerne === undefined ? undefined : lireEnfant(base, idConcerne);
+      const succes = messageFait(parametres.get('fait'), concerne && `Fiche de ${concerne.prenom}`, true);
       if (succes) etat.succes = succes;
 
       if (parametres.has('id')) {

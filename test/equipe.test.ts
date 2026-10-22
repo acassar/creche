@@ -36,11 +36,12 @@ test('idDe n’accepte qu’un entier positif écrit simplement', () => {
 });
 
 test('messageFait ne connaît que les écritures prévues', () => {
-  assert.equal(messageFait('ajoute', 'Marie'), 'Fiche de Marie ajoutée.');
-  assert.equal(messageFait('desactive', 'Marie'), 'Fiche de Marie désactivée.');
-  assert.equal(messageFait('ajoute', undefined), undefined);
+  assert.equal(messageFait('ajoute', 'Fiche de Marie', true), 'Fiche de Marie ajoutée.');
+  assert.equal(messageFait('desactive', 'Fiche de Marie', true), 'Fiche de Marie désactivée.');
+  assert.equal(messageFait('reactive', 'Bouton « Plat »', false), 'Bouton « Plat » réactivé.');
+  assert.equal(messageFait('ajoute', undefined, true), undefined);
   for (const fait of [null, '', '__proto__', 'constructor', 'toString', 'inconnu']) {
-    assert.equal(messageFait(fait, 'Marie'), undefined, String(fait));
+    assert.equal(messageFait(fait, 'Fiche de Marie', true), undefined, String(fait));
   }
 });
 

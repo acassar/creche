@@ -11,6 +11,7 @@ import { enregistrerPremiereEmpreinte, lireEmpreinte } from './direction.ts';
 import type { EcranFiches, Resultat } from './reglages.ts';
 import { ecranEnfants } from './ecran-enfants.ts';
 import { ecranEquipe } from './ecran-equipe.ts';
+import { ecranRepas } from './ecran-repas.ts';
 
 const backofficeParDefaut = resolve(import.meta.dirname, '..', 'backoffice');
 
@@ -47,7 +48,7 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
   const sessions = creerSessions(dureeSession, options.maintenant);
   const limiteur = creerLimiteur(maxEchecs, dureeBlocage, options.maintenant);
   const ecransFiches = new Map<string, EcranFiches>(
-    [ecranEnfants(base, maintenant), ecranEquipe(base, maintenant)].map((ecran) => [ecran.chemin, ecran]),
+    [ecranEnfants(base, maintenant), ecranEquipe(base, maintenant), ecranRepas(base, maintenant)].map((ecran) => [ecran.chemin, ecran]),
   );
 
   // L'écran de fiches que désigne l'adresse : sa liste, ou une fiche (et une action permise).
