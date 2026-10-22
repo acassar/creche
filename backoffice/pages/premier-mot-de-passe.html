@@ -1,0 +1,9 @@
+<p>Bienvenue. Choisissez le mot de passe de la direction : il sera demandé pour ouvrir les réglages. Au moins {{longueur}} caractères.</p>
+{{message}}
+<form method="post" action="/connexion">
+  <label for="mot-de-passe">Nouveau mot de passe direction</label>
+  <input id="mot-de-passe" name="mot_de_passe" type="password" autocomplete="new-password" minlength="{{longueur}}" required autofocus>
+  <label for="confirmation">Retapez-le</label>
+  <input id="confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="{{longueur}}" required>
+  <button type="submit">Enregistrer</button>
+</form>

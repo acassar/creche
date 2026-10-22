@@ -13,7 +13,7 @@ const types: Record<string, string> = {
 };
 
 // Le navigateur ne charge que ce qui vient du serveur lui-même.
-const politique = "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+export const politique = "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 
 /**
  * Cherche dans `dossier` le fichier demandé par `pathname`.
