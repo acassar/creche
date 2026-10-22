@@ -39,6 +39,10 @@ compte), installe les outils, lance le serveur et ouvre le backoffice dans un
 nouvel onglet. La configuration est dans `.devcontainer/devcontainer.json`.
 Pensez à arrêter le Codespace après usage pour ne pas consommer le quota.
 
+Un Codespace tourne sur les serveurs de GitHub : il sert à essayer l'app avec
+des données fictives, jamais avec de vrais enfants. Laissez le port redirigé
+en privé (réglage par défaut).
+
 ## Licence
 
 Ce code est distribué sous licence [GNU AGPL v3](LICENSE).
