@@ -6,8 +6,13 @@ import { migrations as migrationsParDefaut } from './migrations.ts';
 export function ouvrirBase(chemin: string, migrations: readonly string[] = migrationsParDefaut): DatabaseSync {
   if (chemin !== ':memory:') mkdirSync(dirname(chemin), { recursive: true });
   const base = new DatabaseSync(chemin);
-  base.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
-  migrer(base, migrations);
+  try {
+    base.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
+    migrer(base, migrations);
+  } catch (erreur) {
+    base.close();
+    throw erreur;
+  }
   return base;
 }
 

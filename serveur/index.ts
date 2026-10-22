@@ -1,15 +1,23 @@
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
+import type { AddressInfo } from 'node:net';
+import { lireConfig, type Config } from './config.ts';
 import { ouvrirBase } from './base.ts';
 import { creerServeur } from './app.ts';
 
-const dossierDonnees = resolve(process.env.CRECHE_DONNEES ?? 'donnees');
-const port = Number(process.env.PORT ?? 8080);
+let config: Config;
+try {
+  config = lireConfig(process.env);
+} catch (erreur) {
+  console.error(erreur instanceof Error ? erreur.message : erreur);
+  process.exit(1);
+}
 
-const base = ouvrirBase(join(dossierDonnees, 'creche.sqlite'));
+const base = ouvrirBase(join(config.dossierDonnees, 'creche.sqlite'));
 const serveur = creerServeur(base);
 
-serveur.listen(port, () => {
-  console.log(`Serveur crèche prêt sur le port ${port} (données : ${dossierDonnees})`);
+serveur.listen(config.port, () => {
+  const { port } = serveur.address() as AddressInfo;
+  console.log(`Serveur crèche prêt sur le port ${port} (données : ${config.dossierDonnees})`);
 });
 
 function arreter(): void {
@@ -18,5 +26,5 @@ function arreter(): void {
     process.exit(0);
   });
 }
-process.on('SIGINT', arreter);
-process.on('SIGTERM', arreter);
+process.once('SIGINT', arreter);
+process.once('SIGTERM', arreter);

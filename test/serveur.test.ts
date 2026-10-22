@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
@@ -38,6 +38,9 @@ test('une migration en échec est annulée et la version ne bouge pas', (t) => {
     () => ouvrirBase(chemin, [...migrations, 'CREATE TABLE ok (id INTEGER); SELECT * FROM absente;']),
     /Échec de la migration 2/,
   );
+  // SQLite supprime le journal WAL quand la dernière connexion se ferme :
+  // s'il reste, la base n'a pas été refermée après l'échec.
+  assert.equal(existsSync(`${chemin}-wal`), false);
 
   const base = ouvrirBase(chemin);
   assert.equal(versionSchema(base), migrations.length);

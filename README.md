@@ -18,7 +18,7 @@ directement par Node (sans étape de build). Le serveur n'a aucune dépendance
 types pendant le développement.
 
 ```sh
-npm start          # serveur sur le port 8080, données dans ./donnees
+npm start          # serveur sur le port 8080, données dans donnees/
 npm install        # une fois, pour les outils de développement
 npm run verifier   # vérification des types puis tests
 ```
@@ -27,7 +27,8 @@ On n'utilise que la syntaxe TypeScript que Node sait ignorer (pas d'`enum` ni
 de `namespace`) : `tsc` le vérifie avec `erasableSyntaxOnly`.
 
 Variables utiles : `PORT` (8080 par défaut) et `CRECHE_DONNEES` (dossier de la
-base SQLite, `./donnees` par défaut). `GET /api/sante` indique si le serveur
+base SQLite, `donnees/` à la racine du projet par défaut, quel que soit
+le dossier de lancement ; un chemin relatif part du dossier courant). `GET /api/sante` indique si le serveur
 répond et la version du schéma de la base.
 
 ## Licence
