@@ -31,6 +31,14 @@ base SQLite ; par défaut `donnees/` à la racine du projet, quel que soit le
 dossier de lancement). `GET /api/sante` indique si le serveur répond et la
 version du schéma de la base.
 
+## Essayer sans rien installer
+
+[Ouvrir dans un Codespace GitHub](https://codespaces.new/acassar/creche) :
+GitHub prépare l'environnement dans le navigateur (sur le quota gratuit du
+compte), installe les outils, lance le serveur et ouvre le backoffice dans un
+nouvel onglet. La configuration est dans `.devcontainer/devcontainer.json`.
+Pensez à arrêter le Codespace après usage pour ne pas consommer le quota.
+
 ## Licence
 
 Ce code est distribué sous licence [GNU AGPL v3](LICENSE).
