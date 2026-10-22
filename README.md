@@ -31,6 +31,14 @@ base SQLite ; par défaut `donnees/` à la racine du projet, quel que soit le
 dossier de lancement). `GET /api/sante` indique si le serveur répond et la
 version du schéma de la base.
 
+## Backoffice
+
+Une fois le serveur lancé, le backoffice s'ouvre dans le navigateur du PC à
+l'adresse http://localhost:8080. Ses pages sont de simples fichiers HTML et
+CSS dans `backoffice/`, servis tels quels (pas de framework ni de build) :
+`/enfants` sert `backoffice/enfants.html`. Seuls les fichiers `.html`, `.css`,
+`.js` et les images de ce dossier sont accessibles.
+
 ## Licence
 
 Ce code est distribué sous licence [GNU AGPL v3](LICENSE).
