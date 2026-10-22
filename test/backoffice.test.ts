@@ -153,7 +153,7 @@ test('les autres méthodes sont refusées sur les pages', async (t) => {
   const { adresse } = await demarrer(t);
   const cookie = await choisirMotDePasse(adresse);
   for (const method of ['POST', 'PUT', 'DELETE']) {
-    const reponse = await page(adresse, '/enfants', cookie, method);
+    const reponse = await page(adresse, '/equipe', cookie, method);
     assert.equal(reponse.status, 405, method);
     assert.equal(reponse.headers.get('allow'), 'GET, HEAD');
   }

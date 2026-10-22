@@ -46,7 +46,15 @@ Les pages sont assemblées par le serveur, sans framework ni build :
 `backoffice/pages/<écran>.html` le contenu de chaque écran (la liste des écrans
 est dans `serveur/pages.ts`). `backoffice/public/` contient les fichiers servis
 tels quels (feuille de style) : seuls ses `.css`, `.js` et images sont
-accessibles.
+accessibles. Les écrans fonctionnent avec de simples formulaires, sans
+JavaScript ; toute écriture doit venir d'une page du serveur lui-même
+(en-tête `Origin` vérifié).
+
+Écrans disponibles :
+
+- **Enfants** : prénom, date de naissance (l'âge est calculé), allergie ou
+  régime, jours de présence. Un enfant n'est jamais supprimé : on l'archive,
+  il disparaît des listes et peut être réactivé.
 
 ## Essayer sans rien installer
 

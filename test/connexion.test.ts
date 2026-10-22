@@ -237,7 +237,13 @@ test('l’API exige la connexion, sauf la route de santé', async (t) => {
     assert.deepEqual(await reponse.json(), { erreur: 'Connexion requise' });
   }
   const cookie = await choisirMotDePasse(adresse);
-  assert.equal((await page(adresse, '/api/reglages', cookie, 'POST')).status, 404);
+  assert.equal((await envoyerFormulaire(adresse, '/api/reglages', {}, { cookie })).status, 404);
+  // Une écriture d'API venue d'ailleurs est refusée, même avec la session.
+  for (const origine of [null, 'http://site-malveillant.example']) {
+    const reponse = await envoyerFormulaire(adresse, '/api/reglages', {}, { cookie, origine });
+    assert.equal(reponse.status, 403, `origine ${origine}`);
+    assert.deepEqual(await reponse.json(), { erreur: 'Requête refusée' });
+  }
 });
 
 // Depuis une tablette du Wi-Fi, la connexion arrive par l'adresse réseau du PC, pas par 127.0.0.1.

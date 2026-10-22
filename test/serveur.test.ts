@@ -36,7 +36,7 @@ test('une migration en échec est annulée et la version ne bouge pas', (t) => {
 
   assert.throws(
     () => ouvrirBase(chemin, [...migrations, 'CREATE TABLE ok (id INTEGER); SELECT * FROM absente;']),
-    /Échec de la migration 2/,
+    new RegExp(`Échec de la migration ${migrations.length + 1}`),
   );
   // SQLite supprime le journal WAL quand la dernière connexion se ferme :
   // s'il reste, la base n'a pas été refermée après l'échec.
