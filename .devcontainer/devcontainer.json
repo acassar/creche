@@ -1,0 +1,13 @@
+{
+  "name": "Crèche",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm ci",
+  "postAttachCommand": "npm start",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Backoffice",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
