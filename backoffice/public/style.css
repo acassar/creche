@@ -66,3 +66,37 @@ h1 { margin-top: 0; font-size: 26px; }
 .a-venir { color: var(--texte-doux); }
 
 a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+header form { margin-left: auto; }
+
+form { display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+label { font-weight: 700; }
+
+input {
+  padding: 10px 12px;
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+  font: inherit;
+}
+
+button {
+  margin-top: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #FFFFFF;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+header button { margin-top: 0; background: var(--accent-clair); color: var(--accent); }
+
+.erreur {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #FCE3CC;
+  color: #8A3B0B;
+}
+
+input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

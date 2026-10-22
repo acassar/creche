@@ -34,10 +34,19 @@ version du schéma de la base.
 ## Backoffice
 
 Une fois le serveur lancé, le backoffice s'ouvre dans le navigateur du PC à
-l'adresse http://localhost:8080. Ses pages sont de simples fichiers HTML et
-CSS dans `backoffice/`, servis tels quels (pas de framework ni de build) :
-`/enfants` sert `backoffice/enfants.html`. Seuls les fichiers `.html`, `.css`,
-`.js` et les images de ce dossier sont accessibles.
+l'adresse http://localhost:8080. Il est réservé à la direction : au premier
+lancement, la page de connexion propose de choisir le mot de passe direction
+(au moins 8 caractères), uniquement depuis le navigateur du PC lui-même.
+Ensuite, il est demandé à chaque connexion ; la session se ferme après
+30 minutes sans activité, et 5 essais faux bloquent les essais 5 minutes.
+Le mot de passe est stocké haché (scrypt), jamais en clair.
+
+Les pages sont assemblées par le serveur, sans framework ni build :
+`backoffice/gabarit.html` porte l'en-tête et le menu, communs à toutes, et
+`backoffice/pages/<écran>.html` le contenu de chaque écran (la liste des écrans
+est dans `serveur/pages.ts`). `backoffice/public/` contient les fichiers servis
+tels quels (feuille de style) : seuls ses `.css`, `.js` et images sont
+accessibles.
 
 ## Essayer sans rien installer
 
