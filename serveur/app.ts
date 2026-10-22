@@ -110,9 +110,6 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
 
   async function seConnecter(requete: IncomingMessage, reponse: ServerResponse): Promise<void> {
     const adresse = requete.socket.remoteAddress ?? '';
-    if (limiteur.bloque(adresse)) {
-      return envoyerPage(reponse, 'POST', 429, pageConnexion(requete, 'Trop d’essais. Réessayez dans quelques minutes.'));
-    }
     const champs = await lireFormulaire(requete);
     if (champs === null) {
       reponse.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8', Connection: 'close' });
@@ -135,8 +132,13 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
       return ouvrirSession(reponse);
     }
 
+    // L'essai compte comme un échec avant même la vérification (asynchrone) :
+    // des essais envoyés tous en même temps sont ainsi bloqués eux aussi.
+    if (limiteur.bloque(adresse)) {
+      return envoyerPage(reponse, 'POST', 429, pageConnexion(requete, 'Trop d’essais. Réessayez dans quelques minutes.'));
+    }
+    limiteur.echec(adresse);
     if (!(await verifier(motDePasse, empreinte))) {
-      limiteur.echec(adresse);
       return envoyerPage(reponse, 'POST', 401, pageConnexion(requete, 'Mot de passe incorrect.'));
     }
     limiteur.reussite(adresse);
@@ -203,10 +205,16 @@ function origineValide(requete: IncomingMessage): boolean {
   return host !== undefined && (origin === `http://${host}` || origin === `https://${host}`);
 }
 
+// La requête vient du PC lui-même, et sous un nom du PC : un site malveillant
+// qui ferait pointer son propre nom vers 127.0.0.1 (« DNS rebinding ») est exclu.
 function estLocale(requete: IncomingMessage): boolean {
   const adresse = requete.socket.remoteAddress;
-  return adresse === '127.0.0.1' || adresse === '::1' || adresse === '::ffff:127.0.0.1';
+  if (adresse !== '127.0.0.1' && adresse !== '::1' && adresse !== '::ffff:127.0.0.1') return false;
+  const hote = `http://${requete.headers.host ?? ''}`;
+  return URL.canParse(hote) && nomsLocaux.has(new URL(hote).hostname);
 }
+
+const nomsLocaux = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 // Renvoie null si le formulaire dépasse la taille permise.
 async function lireFormulaire(requete: IncomingMessage): Promise<URLSearchParams | null> {

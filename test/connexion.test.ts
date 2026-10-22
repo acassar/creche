@@ -278,3 +278,51 @@ test('depuis une tablette, le premier mot de passe ne peut pas être choisi', { 
   const connexion = await depuisLeReseau(adresse, '/connexion', 'POST', new URLSearchParams({ mot_de_passe: motDePasse }).toString());
   assert.equal(connexion.statut, 303);
 });
+
+test('des essais envoyés tous en même temps ne contournent pas le blocage', async (t) => {
+  const { adresse } = await demarrer(t);
+  await choisirMotDePasse(adresse);
+
+  const statuts = (await Promise.all(
+    Array.from({ length: 20 }, (_, i) => seConnecter(adresse, `faux-${i}`)),
+  )).map((reponse) => reponse.status);
+  assert.equal(statuts.filter((s) => s === 401).length, maxEchecs, statuts.join(' '));
+  assert.equal(statuts.filter((s) => s === 429).length, 20 - maxEchecs, statuts.join(' '));
+});
+
+// Un site malveillant peut faire pointer son propre nom vers 127.0.0.1 (« DNS
+// rebinding ») : la requête vient alors bien du PC, mais avec son nom à lui.
+function sousUnAutreNom(adresse: string, method: string, corps = ''): Promise<{ statut: number; texte: string }> {
+  const { port } = new URL(adresse);
+  const nom = `site-malveillant.example:${port}`;
+  return new Promise((ok, echec) => {
+    const requete = request({
+      host: '127.0.0.1', port, path: '/connexion', method,
+      headers: { Host: nom, Origin: `http://${nom}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    }, (reponse) => {
+      let texte = '';
+      reponse.setEncoding('utf8').on('data', (m: string) => { texte += m; });
+      reponse.on('end', () => ok({ statut: reponse.statusCode ?? 0, texte }));
+    });
+    requete.on('error', echec).end(corps);
+  });
+}
+
+test('un autre site pointé vers le PC ne peut pas choisir le premier mot de passe', async (t) => {
+  const { adresse, base } = await demarrer(t);
+
+  const pageConnexion = await sousUnAutreNom(adresse, 'GET');
+  assert.match(pageConnexion.texte, /uniquement depuis le navigateur du PC du bureau/);
+  assert.ok(!pageConnexion.texte.includes('<form'));
+
+  const corps = new URLSearchParams({ mot_de_passe: motDePasse, confirmation: motDePasse }).toString();
+  assert.equal((await sousUnAutreNom(adresse, 'POST', corps)).statut, 403);
+  assert.equal(lireEmpreinte(base), undefined);
+
+  // Les noms du PC lui-même restent acceptés.
+  for (const nom of ['localhost', '127.0.0.1']) {
+    const { port } = new URL(adresse);
+    const html = await (await fetch(`http://${nom}:${port}/connexion`)).text();
+    assert.match(html, /<h1>Premier lancement<\/h1>/, nom);
+  }
+});
