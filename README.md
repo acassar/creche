@@ -55,6 +55,15 @@ JavaScript ; toute écriture doit venir d'une page du serveur lui-même
 - **Enfants** : prénom, date de naissance (l'âge est calculé), allergie ou
   régime, jours de présence. Un enfant n'est jamais supprimé : on l'archive,
   il disparaît des listes et peut être réactivé.
+- **Équipe** : prénom et couleur de chaque professionnelle (elles signeront
+  leurs saisies sur la tablette). Deux professionnelles actives ne peuvent pas
+  porter le même prénom ; une professionnelle qui part est désactivée, jamais
+  supprimée.
+
+Les écrans faits d'une liste et d'une fiche partagent le même routage
+(`serveur/reglages.ts`) : chacun déclare son adresse et ses actions, et le
+serveur s'occupe du reste (connexion, vérification de l'origine, taille du
+formulaire, redirection après écriture).
 
 ## Essayer sans rien installer
 

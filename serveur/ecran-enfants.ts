@@ -1,7 +1,74 @@
+import type { DatabaseSync } from 'node:sqlite';
 import { echapper } from './pages.ts';
+import { idDe, messageFait, type EcranFiches, type Resultat } from './reglages.ts';
 import {
-  ageLisible, dateLisible, joursDeLaSemaine, joursLisibles, tousLesJours, type Enfant, type Saisie,
+  ageLisible, ajouterEnfant, archiverEnfant, dateDuJour, dateLisible, joursDeLaSemaine, joursLisibles, lireEnfant,
+  listerEnfants, modifierEnfant, reactiverEnfant, tousLesJours, verifierSaisie, type Enfant, type Saisie,
 } from './enfants.ts';
+
+type Etat = Omit<EtatEcran, 'enfants' | 'aujourdhui'>;
+
+export function ecranEnfants(base: DatabaseSync, maintenant: () => number): EcranFiches {
+  function repondre(statut: number, etat: Etat): Resultat {
+    const valeurs = valeursEcranEnfants({ ...etat, enfants: listerEnfants(base), aujourdhui: dateDuJour(maintenant()) });
+    return { statut, page: { titre: 'Enfants', fichier: 'enfants', valeurs, privee: true, cheminActif: '/enfants' } };
+  }
+
+  return {
+    chemin: '/enfants',
+    actions: new Set(['archiver', 'reactiver']),
+
+    afficher(parametres) {
+      const etat: Etat = {};
+      const idConcerne = idDe(parametres.get('enfant'));
+      const succes = messageFait(parametres.get('fait'), idConcerne === undefined ? undefined : lireEnfant(base, idConcerne)?.prenom);
+      if (succes) etat.succes = succes;
+
+      if (parametres.has('id')) {
+        const idSelection = idDe(parametres.get('id'));
+        const selection = idSelection === undefined ? undefined : lireEnfant(base, idSelection);
+        if (selection === undefined || selection.archiveLe !== null) {
+          return repondre(404, { erreur: 'Cet enfant n’existe pas ou a été archivé.' });
+        }
+        etat.selection = selection;
+      }
+      return repondre(200, etat);
+    },
+
+    ecrire(champs, id, action) {
+      const aujourdhui = dateDuJour(maintenant());
+      const selection = id === undefined ? undefined : lireEnfant(base, id);
+      if (id !== undefined && selection === undefined) return repondre(404, { erreur: 'Cet enfant n’existe pas.' });
+
+      if (selection && action === 'archiver') {
+        archiverEnfant(base, selection.id, aujourdhui);
+        return { redirection: `/enfants?fait=archive&enfant=${selection.id}` };
+      }
+      if (selection && action === 'reactiver') {
+        reactiverEnfant(base, selection.id);
+        return { redirection: `/enfants?id=${selection.id}&fait=reactive&enfant=${selection.id}` };
+      }
+
+      const resultat = verifierSaisie(champs, aujourdhui);
+      if ('erreur' in resultat) {
+        // On remet ce qui a été tapé (cases cochées comprises) pour corriger sans tout ressaisir.
+        const saisie = {
+          prenom: champs.get('prenom') ?? '',
+          naissance: champs.get('naissance') ?? '',
+          aSavoir: champs.get('a_savoir') ?? '',
+          jours: champs.getAll('jours').reduce((total, bit) => total | (Number(bit) & tousLesJours), 0),
+        };
+        return repondre(400, { erreur: resultat.erreur, saisie, ...(selection ? { selection } : {}) });
+      }
+      if (selection) {
+        modifierEnfant(base, selection.id, resultat.saisie);
+        return { redirection: `/enfants?id=${selection.id}&fait=enregistre&enfant=${selection.id}` };
+      }
+      const nouveau = ajouterEnfant(base, resultat.saisie);
+      return { redirection: `/enfants?id=${nouveau}&fait=ajoute&enfant=${nouveau}` };
+    },
+  };
+}
 
 export interface EtatEcran {
   enfants: Enfant[];

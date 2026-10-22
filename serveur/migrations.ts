@@ -15,4 +15,12 @@ export const migrations: readonly string[] = [
      jours      INTEGER NOT NULL CHECK (jours BETWEEN 1 AND 31),
      archive_le TEXT
    ) STRICT;`,
+  // L'équipe : une professionnelle désactivée (départ, fin de contrat) ne
+  // signe plus de saisies mais reste l'autrice de celles qu'elle a faites.
+  `CREATE TABLE equipe (
+     id           INTEGER PRIMARY KEY,
+     prenom       TEXT    NOT NULL CHECK (length(prenom) BETWEEN 1 AND 30),
+     couleur      TEXT    NOT NULL CHECK (length(couleur) BETWEEN 1 AND 20),
+     desactive_le TEXT
+   ) STRICT;`,
 ];
