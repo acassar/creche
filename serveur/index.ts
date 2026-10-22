@@ -1,29 +1,22 @@
-import { join } from 'node:path';
-import type { AddressInfo } from 'node:net';
-import { lireConfig, type Config } from './config.ts';
-import { ouvrirBase } from './base.ts';
-import { creerServeur } from './app.ts';
+import { lireConfig } from './config.ts';
+import { demarrer, type ServeurDemarre } from './demarrage.ts';
 
-let config: Config;
+let serveur: ServeurDemarre;
 try {
-  config = lireConfig(process.env);
+  const config = lireConfig(process.env);
+  serveur = await demarrer(config);
+  console.log(`Serveur crèche prêt sur le port ${serveur.port} (données : ${config.dossierDonnees})`);
 } catch (erreur) {
   console.error(erreur instanceof Error ? erreur.message : erreur);
   process.exit(1);
 }
 
-const base = ouvrirBase(join(config.dossierDonnees, 'creche.sqlite'));
-const serveur = creerServeur(base);
-
-serveur.listen(config.port, () => {
-  const { port } = serveur.address() as AddressInfo;
-  console.log(`Serveur crèche prêt sur le port ${port} (données : ${config.dossierDonnees})`);
-});
-
+// Sous Windows, seul Ctrl+C (SIGINT) arrive jusqu'ici. Un second signal
+// n'est plus intercepté : il force l'arrêt.
 function arreter(): void {
-  serveur.close(() => {
-    base.close();
-    process.exit(0);
+  serveur.arreter().then(() => process.exit(0), (erreur: unknown) => {
+    console.error(erreur);
+    process.exit(1);
   });
 }
 process.once('SIGINT', arreter);
