@@ -27,9 +27,9 @@ On n'utilise que la syntaxe TypeScript que Node sait ignorer (pas d'`enum` ni
 de `namespace`) : `tsc` le vérifie avec `erasableSyntaxOnly`.
 
 Variables utiles : `PORT` (8080 par défaut) et `CRECHE_DONNEES` (dossier de la
-base SQLite, `donnees/` à la racine du projet par défaut, quel que soit
-le dossier de lancement ; un chemin relatif part du dossier courant). `GET /api/sante` indique si le serveur
-répond et la version du schéma de la base.
+base SQLite ; par défaut `donnees/` à la racine du projet, quel que soit le
+dossier de lancement). `GET /api/sante` indique si le serveur répond et la
+version du schéma de la base.
 
 ## Licence
 
