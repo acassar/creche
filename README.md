@@ -10,6 +10,26 @@ par le Wi-Fi local. Pas de cloud, pas de compte externe.
 
 Les tâches sont suivies dans les [issues](https://github.com/acassar/creche/issues).
 
+## Démarrer le serveur
+
+Il faut Node.js 22.18 ou plus récent. Le code est en TypeScript, exécuté
+directement par Node (sans étape de build). Le serveur n'a aucune dépendance
+à l'exécution ; `typescript` et `@types/node` servent seulement à vérifier les
+types pendant le développement.
+
+```sh
+npm start          # serveur sur le port 8080, données dans ./donnees
+npm install        # une fois, pour les outils de développement
+npm run verifier   # vérification des types puis tests
+```
+
+On n'utilise que la syntaxe TypeScript que Node sait ignorer (pas d'`enum` ni
+de `namespace`) : `tsc` le vérifie avec `erasableSyntaxOnly`.
+
+Variables utiles : `PORT` (8080 par défaut) et `CRECHE_DONNEES` (dossier de la
+base SQLite, `./donnees` par défaut). `GET /api/sante` indique si le serveur
+répond et la version du schéma de la base.
+
 ## Licence
 
 Ce code est distribué sous licence [GNU AGPL v3](LICENSE).
