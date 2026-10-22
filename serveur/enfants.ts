@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { lireTexte, ordreAlphabetique } from './reglages.ts';
 
 export interface Enfant {
   id: number;
@@ -68,24 +69,14 @@ function dateValide(date: string): boolean {
   return verif.getUTCFullYear() === annee && verif.getUTCMonth() === mois - 1 && verif.getUTCDate() === jour;
 }
 
-// Lettres de contrôle (retour à la ligne, tabulation…) : jamais utiles dans un prénom ou une note courte.
-const controle = /\p{Cc}/u;
-
 /**
  * Vérifie le formulaire d'un enfant. Renvoie la saisie nettoyée, ou le
  * message d'erreur à montrer à la direction.
  */
 export function verifierSaisie(champs: URLSearchParams, aujourdhui: string): { saisie: Saisie } | { erreur: string } {
-  // NFC d'abord (un « é » tapé sur deux claviers différents est le même), et
-  // les longueurs se vérifient ensuite, sur ce qui sera réellement enregistré.
-  const prenom = (champs.get('prenom') ?? '').normalize('NFC').trim();
+  const prenom = lireTexte(champs, 'prenom', 'le prénom', longueurPrenom, true);
+  if ('erreur' in prenom) return prenom;
   const naissance = (champs.get('naissance') ?? '').trim();
-  const aSavoir = (champs.get('a_savoir') ?? '').normalize('NFC').trim();
-  const joursCoches = champs.getAll('jours');
-
-  if (prenom === '') return { erreur: 'Indiquez le prénom.' };
-  if ([...prenom].length > longueurPrenom) return { erreur: `Le prénom fait au plus ${longueurPrenom} caractères.` };
-  if (controle.test(prenom)) return { erreur: 'Le prénom contient un caractère invalide.' };
 
   if (!dateValide(naissance)) return { erreur: 'Indiquez une date de naissance valide.' };
   if (naissance > aujourdhui) return { erreur: 'La date de naissance est dans le futur.' };
@@ -93,18 +84,18 @@ export function verifierSaisie(champs: URLSearchParams, aujourdhui: string): { s
     return { erreur: `La date de naissance donne plus de ${ageMaximumEnAnnees} ans : vérifiez l’année.` };
   }
 
-  if ([...aSavoir].length > longueurASavoir) return { erreur: `« Allergie ou régime » fait au plus ${longueurASavoir} caractères.` };
-  if (controle.test(aSavoir)) return { erreur: '« Allergie ou régime » contient un caractère invalide.' };
+  const aSavoir = lireTexte(champs, 'a_savoir', '« Allergie ou régime »', longueurASavoir, false);
+  if ('erreur' in aSavoir) return aSavoir;
 
   let jours = 0;
-  for (const coche of joursCoches) {
+  for (const coche of champs.getAll('jours')) {
     const jour = joursDeLaSemaine.find(({ bit }) => String(bit) === coche);
     if (jour === undefined) return { erreur: 'Jour de présence inconnu.' };
     jours |= jour.bit;
   }
   if (jours === 0) return { erreur: 'Cochez au moins un jour de présence.' };
 
-  return { saisie: { prenom, naissance, aSavoir, jours } };
+  return { saisie: { prenom: prenom.texte, naissance, aSavoir: aSavoir.texte, jours } };
 }
 
 interface Ligne {
@@ -126,8 +117,6 @@ function versEnfant(ligne: Ligne): Enfant {
     archiveLe: ligne.archive_le,
   };
 }
-
-const ordreAlphabetique = new Intl.Collator('fr', { sensitivity: 'base' });
 
 // Tous les enfants, actifs et archivés, triés par prénom (« Élise » entre « Adam » et « Zoé »).
 export function listerEnfants(base: DatabaseSync): Enfant[] {

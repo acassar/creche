@@ -1,2 +1,23 @@
-<p>Les professionnelles qui utilisent les tablettes.</p>
-<p class="a-venir">Cet écran arrive bientôt.</p>
+<p class="intro">{{resume}}</p>
+{{message}}
+<div class="deux-colonnes">
+  <section class="liste" aria-label="Équipe">
+{{liste}}
+{{desactivees}}
+  </section>
+  <section class="panneau" aria-labelledby="titre-fiche">
+{{nouveau}}
+    <h2 id="titre-fiche">{{titreFiche}}</h2>
+    <form method="post" action="{{action}}">
+      <label for="prenom">Prénom</label>
+      <input id="prenom" name="prenom" value="{{prenom}}" maxlength="30" required autocomplete="off">
+      <p class="aide">Deux prénoms identiques ? Ajoutez l’initiale du nom : « Marie L. ».</p>
+      <fieldset>
+        <legend>Couleur sur la tablette</legend>
+{{couleurs}}
+      </fieldset>
+      <button type="submit">Enregistrer</button>
+    </form>
+{{desactiver}}
+  </section>
+</div>
