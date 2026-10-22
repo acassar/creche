@@ -27,13 +27,18 @@ export function creerServeur(base: DatabaseSync, dossierBackoffice = backofficeP
   });
 
   async function traiter(methode: string, url: string, reponse: ServerResponse): Promise<void> {
+    if (!URL.canParse(url, 'http://localhost')) {
+      return envoyerJson(reponse, 400, { erreur: 'Adresse invalide' });
+    }
     const { pathname } = new URL(url, 'http://localhost');
 
     if (pathname === '/api' || pathname.startsWith('/api/')) {
-      if (methode === 'GET' && pathname === '/api/sante') {
-        return envoyerJson(reponse, 200, { ok: true, schema: versionSchema(base) });
+      if (pathname !== '/api/sante') return envoyerJson(reponse, 404, { erreur: 'Introuvable' });
+      if (methode !== 'GET') {
+        reponse.setHeader('Allow', 'GET');
+        return envoyerJson(reponse, 405, { erreur: 'Méthode non autorisée' });
       }
-      return envoyerJson(reponse, 404, { erreur: 'Introuvable' });
+      return envoyerJson(reponse, 200, { ok: true, schema: versionSchema(base) });
     }
 
     if (methode !== 'GET' && methode !== 'HEAD') {

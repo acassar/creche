@@ -156,8 +156,26 @@ test('une page inconnue répond 404, une route d’API inconnue aussi, en JSON',
     assert.equal(api.status, 404, chemin);
     assert.deepEqual(await api.json(), { erreur: 'Introuvable' });
   }
-  const post = await fetch(`${adresse}/api/sante`, { method: 'POST' });
-  assert.equal(post.status, 404);
+});
+
+test('une méthode non prévue sur une route d’API existante répond 405', async (t) => {
+  const adresse = await demarrer(t);
+  for (const method of ['POST', 'PUT', 'DELETE']) {
+    const reponse = await fetch(`${adresse}/api/sante`, { method });
+    assert.equal(reponse.status, 405, method);
+    assert.equal(reponse.headers.get('allow'), 'GET');
+    assert.deepEqual(await reponse.json(), { erreur: 'Méthode non autorisée' });
+  }
+  const inconnue = await fetch(`${adresse}/api/inconnue`, { method: 'POST' });
+  assert.equal(inconnue.status, 404);
+});
+
+test('une adresse mal formée répond 400 sans trace d’erreur', async (t) => {
+  const adresse = await demarrer(t);
+  const erreurs = t.mock.method(console, 'error', () => {});
+  assert.equal(await requeteBrute(adresse, 'http://['), 400);
+  assert.equal(erreurs.mock.callCount(), 0);
+  assert.equal(await requeteBrute(adresse, '/'), 200);
 });
 
 test('aucun fichier hors du backoffice ni fichier privé n’est servi', async (t) => {
