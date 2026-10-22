@@ -110,7 +110,7 @@ export function valeursEcranEquipe(etat: EtatEcranEquipe): Record<string, string
 }
 
 function pastille(membre: Membre): string {
-  return `<span class="pastille couleur-${membre.couleur}" aria-hidden="true">${echapper(initiales(membre.prenom))}</span>`;
+  return `<span class="pastille couleur-${echapper(membre.couleur)}" aria-hidden="true">${echapper(initiales(membre.prenom))}</span>`;
 }
 
 function tableau(equipe: Membre[], idSelection: number | undefined): string {

@@ -312,3 +312,12 @@ test('écran Équipe : méthodes permises', async (t) => {
     assert.equal(reponse.headers.get('allow'), permis, `${method} ${chemin}`);
   }
 });
+
+test('écran Équipe : une couleur inattendue en base est échappée dans la pastille', async (t) => {
+  const { base, voir } = await connecte(t);
+  // La base ne contrôle que la longueur de la couleur : on ne fait pas confiance à son contenu.
+  base.prepare('INSERT INTO equipe (prenom, couleur) VALUES (?, ?)').run('Inès', 'x" data-piege="1');
+  const html = await (await voir('/equipe')).text();
+  assert.ok(!html.includes('data-piege="1"'), 'attribut injecté dans la page');
+  assert.match(html, /couleur-x&quot; data-piege=&quot;1/);
+});
