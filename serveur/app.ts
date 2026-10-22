@@ -8,6 +8,10 @@ import { creerSessions } from './sessions.ts';
 import { creerLimiteur } from './limiteur.ts';
 import { hacher, longueurMinimale, verifier } from './mot-de-passe.ts';
 import { enregistrerPremiereEmpreinte, lireEmpreinte } from './direction.ts';
+import {
+  ajouterEnfant, archiverEnfant, dateDuJour, lireEnfant, listerEnfants, modifierEnfant, reactiverEnfant, verifierSaisie,
+} from './enfants.ts';
+import { valeursEcranEnfants, type EtatEcran } from './ecran-enfants.ts';
 
 const backofficeParDefaut = resolve(import.meta.dirname, '..', 'backoffice');
 
@@ -25,6 +29,17 @@ const entetesSecurite = {
   'Referrer-Policy': 'same-origin',
 };
 
+// /enfants/12 (modifier), /enfants/12/archiver, /enfants/12/reactiver
+const routeFicheEnfant = /^\/enfants\/([1-9]\d{0,8})(?:\/(archiver|reactiver))?$/;
+
+// Message affiché après une écriture réussie, d'après ?fait=…
+const messagesFait: Record<string, (prenom: string) => string> = {
+  ajoute: (prenom) => `Fiche de ${prenom} ajoutée.`,
+  enregistre: (prenom) => `Fiche de ${prenom} enregistrée.`,
+  archive: (prenom) => `Fiche de ${prenom} archivée.`,
+  reactive: (prenom) => `Fiche de ${prenom} réactivée.`,
+};
+
 const pagesPrivees = new Map<string, Page>(
   [accueil, ...ecrans].map(({ chemin, titre, fichier }) => [chemin, { titre, fichier, privee: true, cheminActif: chemin }]),
 );
@@ -37,6 +52,7 @@ export interface Options {
 
 export function creerServeur(base: DatabaseSync, options: Options = {}): Server {
   const dossier = options.dossierBackoffice ?? backofficeParDefaut;
+  const maintenant = options.maintenant ?? Date.now;
   const sessions = creerSessions(dureeSession, options.maintenant);
   const limiteur = creerLimiteur(maxEchecs, dureeBlocage, options.maintenant);
 
@@ -57,7 +73,7 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
     if (!URL.canParse(url, 'http://localhost')) {
       return envoyerJson(reponse, 400, { erreur: 'Adresse invalide' });
     }
-    const { pathname } = new URL(url, 'http://localhost');
+    const { pathname, searchParams } = new URL(url, 'http://localhost');
     const jeton = lireCookie(requete, 'session');
     const connecte = sessions.valider(jeton);
 
@@ -69,12 +85,21 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
         }
         return envoyerJson(reponse, 200, { ok: true, schema: versionSchema(base) });
       }
-      // Toute autre route d'API (dont les écritures des réglages) exige la direction.
+      // Toute autre route d'API (dont les écritures des réglages) exige la direction,
+      // et une écriture doit venir d'une page du serveur lui-même.
       if (!connecte) return envoyerJson(reponse, 401, { erreur: 'Connexion requise' });
+      if (methode !== 'GET' && methode !== 'HEAD' && !origineValide(requete)) {
+        return envoyerJson(reponse, 403, { erreur: 'Requête refusée' });
+      }
       return envoyerJson(reponse, 404, { erreur: 'Introuvable' });
     }
 
-    if (methode === 'POST' && (pathname === '/connexion' || pathname === '/deconnexion')) {
+    const ficheEnfant = routeFicheEnfant.exec(pathname);
+    const ecritureEnfant = pathname === '/enfants' || ficheEnfant !== null;
+
+    if (methode === 'POST' && (pathname === '/connexion' || pathname === '/deconnexion' || ecritureEnfant)) {
+      // Toute écriture doit venir d'une page du serveur lui-même : un autre
+      // site ouvert dans le navigateur ne peut rien envoyer à sa place.
       if (!origineValide(requete)) {
         reponse.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
         return void reponse.end('Requête refusée');
@@ -83,11 +108,18 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
         sessions.fermer(jeton);
         return rediriger(reponse, '/connexion', 'session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
       }
-      return seConnecter(requete, reponse);
+      if (pathname === '/connexion') return seConnecter(requete, reponse);
+      if (!connecte) return rediriger(reponse, '/connexion');
+      return ecrireEnfant(requete, reponse, ficheEnfant ? Number(ficheEnfant[1]) : undefined, ficheEnfant?.[2]);
     }
 
     if (methode !== 'GET' && methode !== 'HEAD') {
-      reponse.setHeader('Allow', pathname === '/connexion' ? 'GET, HEAD, POST' : 'GET, HEAD');
+      const permis = pathname === '/connexion' || pathname === '/enfants' ? 'GET, HEAD, POST' : ficheEnfant ? 'POST' : 'GET, HEAD';
+      reponse.setHeader('Allow', permis);
+      return envoyerJson(reponse, 405, { erreur: 'Méthode non autorisée' });
+    }
+    if (ficheEnfant) {
+      reponse.setHeader('Allow', 'POST');
       return envoyerJson(reponse, 405, { erreur: 'Méthode non autorisée' });
     }
 
@@ -99,6 +131,7 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
     const page = pagesPrivees.get(pathname);
     if (page) {
       if (!connecte) return rediriger(reponse, '/connexion');
+      if (pathname === '/enfants') return afficherEnfants(reponse, methode, searchParams);
       return envoyerPage(reponse, methode, 200, page);
     }
 
@@ -145,6 +178,69 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
     return ouvrirSession(reponse);
   }
 
+  function afficherEnfants(reponse: ServerResponse, methode: string, parametres: URLSearchParams): Promise<void> {
+    const etat: Omit<EtatEcran, 'enfants' | 'aujourdhui'> = {};
+    const idConcerne = idDe(parametres.get('enfant'));
+    const concerne = idConcerne === undefined ? undefined : lireEnfant(base, idConcerne);
+    const message = messagesFait[parametres.get('fait') ?? ''];
+    if (concerne && message) etat.succes = message(concerne.prenom);
+
+    if (parametres.has('id')) {
+      const idSelection = idDe(parametres.get('id'));
+      const selection = idSelection === undefined ? undefined : lireEnfant(base, idSelection);
+      if (selection === undefined || selection.archiveLe !== null) {
+        return envoyerEnfants(reponse, methode, 404, { erreur: 'Cet enfant n’existe pas ou a été archivé.' });
+      }
+      etat.selection = selection;
+    }
+    return envoyerEnfants(reponse, methode, 200, etat);
+  }
+
+  async function ecrireEnfant(requete: IncomingMessage, reponse: ServerResponse, id?: number, action?: string): Promise<void> {
+    const champs = await lireFormulaire(requete);
+    if (champs === null) {
+      reponse.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8', Connection: 'close' });
+      return void reponse.end('Formulaire trop long');
+    }
+    const aujourdhui = dateDuJour(maintenant());
+    const selection = id === undefined ? undefined : lireEnfant(base, id);
+    if (id !== undefined && selection === undefined) {
+      return envoyerEnfants(reponse, 'POST', 404, { erreur: 'Cet enfant n’existe pas.' });
+    }
+
+    if (selection && action === 'archiver') {
+      archiverEnfant(base, selection.id, aujourdhui);
+      return rediriger(reponse, `/enfants?fait=archive&enfant=${selection.id}`);
+    }
+    if (selection && action === 'reactiver') {
+      reactiverEnfant(base, selection.id);
+      return rediriger(reponse, `/enfants?id=${selection.id}&fait=reactive&enfant=${selection.id}`);
+    }
+
+    const resultat = verifierSaisie(champs, aujourdhui);
+    if ('erreur' in resultat) {
+      // On remet ce qui a été tapé (cases cochées comprises) pour corriger sans tout ressaisir.
+      const saisie = {
+        prenom: champs.get('prenom') ?? '',
+        naissance: champs.get('naissance') ?? '',
+        aSavoir: champs.get('a_savoir') ?? '',
+        jours: champs.getAll('jours').reduce((total, bit) => total | (Number(bit) & 31), 0),
+      };
+      return envoyerEnfants(reponse, 'POST', 400, { erreur: resultat.erreur, saisie, ...(selection ? { selection } : {}) });
+    }
+    if (selection) {
+      modifierEnfant(base, selection.id, resultat.saisie);
+      return rediriger(reponse, `/enfants?id=${selection.id}&fait=enregistre&enfant=${selection.id}`);
+    }
+    const nouveau = ajouterEnfant(base, resultat.saisie);
+    return rediriger(reponse, `/enfants?id=${nouveau}&fait=ajoute&enfant=${nouveau}`);
+  }
+
+  function envoyerEnfants(reponse: ServerResponse, methode: string, statut: number, etat: Omit<EtatEcran, 'enfants' | 'aujourdhui'>): Promise<void> {
+    const valeurs = valeursEcranEnfants({ ...etat, enfants: listerEnfants(base), aujourdhui: dateDuJour(maintenant()) });
+    return envoyerPage(reponse, methode, statut, { titre: 'Enfants', fichier: 'enfants', valeurs, privee: true, cheminActif: '/enfants' });
+  }
+
   function ouvrirSession(reponse: ServerResponse): void {
     // À compléter par « Secure » quand le serveur passera en HTTPS (I6).
     rediriger(reponse, '/', `session=${sessions.ouvrir()}; HttpOnly; SameSite=Strict; Path=/`);
@@ -178,6 +274,11 @@ export function creerServeur(base: DatabaseSync, options: Options = {}): Server 
     });
     reponse.end(methode === 'HEAD' ? undefined : html);
   }
+}
+
+// Identifiant d'enregistrement lu dans l'adresse : un entier positif, sinon undefined.
+function idDe(texte: string | null): number | undefined {
+  return texte !== null && /^[1-9]\d{0,8}$/.test(texte) ? Number(texte) : undefined;
 }
 
 function rediriger(reponse: ServerResponse, cible: string, cookie?: string): void {

@@ -1,2 +1,27 @@
-<p>Les enfants inscrits, leur date de naissance et leurs jours de présence.</p>
-<p class="a-venir">Cet écran arrive bientôt.</p>
+<p class="intro">{{resume}}</p>
+{{message}}
+<div class="deux-colonnes">
+  <section class="liste" aria-label="Enfants inscrits">
+{{liste}}
+{{archives}}
+  </section>
+  <section class="panneau" aria-labelledby="titre-fiche">
+{{nouveau}}
+    <h2 id="titre-fiche">{{titreFiche}}</h2>
+{{age}}
+    <form method="post" action="{{action}}">
+      <label for="prenom">Prénom</label>
+      <input id="prenom" name="prenom" value="{{prenom}}" maxlength="50" required autocomplete="off">
+      <label for="naissance">Date de naissance</label>
+      <input id="naissance" name="naissance" type="date" value="{{naissance}}" max="{{aujourdhui}}" required>
+      <label for="a-savoir">Allergie ou régime</label>
+      <input id="a-savoir" name="a_savoir" value="{{aSavoir}}" maxlength="200" autocomplete="off" placeholder="Ex. sans arachide, lait HA">
+      <fieldset>
+        <legend>Jours de présence</legend>
+{{jours}}
+      </fieldset>
+      <button type="submit">Enregistrer</button>
+    </form>
+{{archiver}}
+  </section>
+</div>
